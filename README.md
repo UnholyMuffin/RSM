@@ -5,10 +5,6 @@
 
 A WPF desktop GUI written in PowerShell for monitoring a remote Windows server's health and managing its RDP sessions from a single window.
 
-![Version](https://img.shields.io/badge/version-2.1.3-blue)
-![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
-![PowerShell](https://img.shields.io/badge/PowerShell-5.1-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
