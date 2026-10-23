@@ -3,8 +3,6 @@
 <img width="1600" height="843" alt="WhatsApp Image 2026-10-23 at 09 19 28" src="https://github.com/user-attachments/assets/bfcbfbe5-23ef-4325-b802-e2b20e21b7dc" />
 
 
-A WPF desktop GUI written in PowerShell for monitoring a remote Windows server's health and managing its RDP sessions from a single window.
-
 
 ---
 
