@@ -1,6 +1,6 @@
 # Remote Server Monitor
 
-<img width="1600" height="843" alt="WhatsApp Image 2026-10-23 at 09 19 28" src="https://github.com/user-attachments/assets/bfcbfbe5-23ef-4325-b802-e2b20e21b7dc" />
+<img width="4095" height="2052" alt="image" src="https://github.com/user-attachments/assets/643795de-4ef5-4f39-ac3a-630fc507e505" />
 
 
 
