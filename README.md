@@ -6,59 +6,49 @@
 
 ---
 
-## Overview
+# Remote Server Monitor
 
-Remote Server Monitor is a single-file PowerShell script (`.ps1`) that launches a WPF dashboard. It queries a remote Windows host over ping, CIM (WinRM), and the built-in `quser` / `qwinsta` console tools, then presents the results in a clean, card-based UI.
+A PowerShell WPF tool for monitoring Windows servers over the network — CPU, RAM, disk, network throughput, RDP sessions, and client info — in one clean desktop GUI. No agents, no installation on the target.
 
-It is designed for system administrators who want a fast, at-a-glance view of a server's health — and the ability to disconnect stuck RDP sessions — without opening Task Manager, Event Viewer, or an RDP window.
-
-The script can be run directly or packaged into a standalone `.exe` with [ps2exe](https://github.com/MScholtes/PS2EXE).
+![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue?logo=powershell)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows)
 
 ---
 
-## Features
+## What it does
 
-| Feature | Description |
-|---|---|
-| **Availability check** | Ping test before any queries |
-| **TTL-based OS heuristic** | If observed TTL < 100, warns that the host is likely Linux/non-Windows and skips CIM queries |
-| **CPU metrics** | Load %, processor name, physical cores / logical threads |
-| **RAM metrics** | Used / total / free, percentage |
-| **Disk metrics** | Per fixed volume: usage %, used / total / free (full detail in hover tooltip) |
-| **Network throughput** | RX/TX per active adapter, 1-second sample, aggregate totals |
-| **OS information** | Caption, version, build, architecture, service pack, install date |
-| **Server date/time** | Local time, time zone, offset vs. admin's PC |
-| **Boot time / uptime** | Last boot timestamp and uptime in days/hours/minutes/seconds |
-| **RDP sessions** | Active and disconnected sessions: user, session ID, state, station, idle, logon time |
-| **State filter** | All / Active only / Disconnected only |
-| **Copy list** | Copy the formatted session table to the clipboard |
-| **Disconnect session** | Force logoff a selected user with a confirmation dialog |
-| **IP → hostname resolution** | If an IP is entered, resolves it to a short hostname |
+Point it at a hostname or IP, hit **CHECK STATUS**, and it shows:
+
+- **CPU / RAM / Disk** — live usage with progress bars
+- **Network** — RX/TX throughput sampled over 1 second
+- **System info** — hostname + IPs, OS version, remote date/time, boot time, uptime
+- **RDP sessions** — active and disconnected users with session ID, state, client hostname, idle time, logon time
+- **Quick actions** — launch RDP, open remote `services.msc`, browse `\\server\c$`
+- **Port check** — test whether a TCP port is reachable
+
+All queries run in background runspaces, so the UI never freezes.
+
+---
+
+## Screenshot
+
+> _Add a screenshot of the GUI here._
 
 ---
 
 ## Requirements
 
-### Admin workstation
-- Windows 10 / 11 or Windows Server 2016+
-- Windows PowerShell 5.1 (built-in)
-- `quser.exe`, `qwinsta.exe`, `ping.exe`, `logoff.exe` in `PATH` (standard Windows)
+- **Windows** (client side)
+- **PowerShell 5.1** or newer — no modules to install
+- Network access to the target on **ICMP**, **RPC/WMI** (135 + dynamic range), and **Terminal Services RPC**
+- An account with permission to query the target (WMI read + Terminal Services query)
 
-### Target server
-- Windows Server 2012 R2 or newer
-- WinRM enabled (for CIM queries)
-- RPC accessible (for `quser` / `qwinsta` / `logoff`)
-- ICMP reachable (for the ping test)
-
-### Permissions
-- Local administrator on the target server — required for `quser`, `qwinsta`, `logoff`, and most `Win32_*` CIM classes
-- On the target server, `Full Control` on the RDP listener is required to disconnect other users' sessions
+No agent or service on the target server is required.
 
 ---
 
 ## Usage
 
-### Run directly from PowerShell
-
+**From PowerShell:**
 ```powershell
-powershell -ExecutionPolicy Bypass -File "Remote Server Monitor.ps1"
+.\RemoteServerMonitor.ps1
