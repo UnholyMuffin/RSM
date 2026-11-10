@@ -1,14 +1,6 @@
 ﻿# Remote Server Monitor - WPF GUI
-# Version 2.1.3 - Layout: sidebar | metrics+info | sessions
-#   * Sidebar (server input + status) unchanged structurally
-#   * Left column: vertical KPI stack (CPU, RAM, DISK, NETWORK) + System Information
-#   * Right column: Remote Sessions (full height)
-#   * Sessions come from quser (primary) or qwinsta (fallback) only
-#   * TTL heuristic — if ping TTL < 100, warn that the host is likely
-#     Linux/non-Windows (Windows initial TTL is 128; Linux is 64)
-#   * Status / footer text brightened for better contrast on the dark sidebar
-#   * FIX (ps2exe): window Closed handler force-terminates the host process so
-#     it does not linger in Task Manager after the app is closed.
+# Version 2.2.6 - Live login search filter; Copy button removed
+
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
@@ -17,7 +9,7 @@ Add-Type -AssemblyName WindowsBase
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Remote Server Monitor v2.1.3" Height="900" Width="1420"
+        Title="Remote Server Monitor v2.2.6" Height="900" Width="1420"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         Background="#EEF1F5">
@@ -78,6 +70,8 @@ Add-Type -AssemblyName WindowsBase
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -87,12 +81,12 @@ Add-Type -AssemblyName WindowsBase
                                FontSize="11" FontWeight="Bold"/>
                     <TextBlock Text="Remote Console" Foreground="White"
                                FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
-                    <TextBlock Text="v2.1.3" Foreground="#5B6B7F"
+                    <TextBlock Text="v2.2.6" Foreground="#5B6B7F"
                                FontSize="10" Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="1">
-                    <TextBlock Text="TARGET SERVER" Foreground="#7A8AA0"
+                    <TextBlock Text="TARGET HOSTNAME" Foreground="#7A8AA0"
                                FontSize="10" FontWeight="Bold" Margin="0,0,0,6"/>
                     <Border Background="#121A24" CornerRadius="6" Padding="2">
                         <TextBox Name="txtServer" Height="32" FontSize="13"
@@ -102,7 +96,7 @@ Add-Type -AssemblyName WindowsBase
                                  CaretBrush="#5B9BFF"/>
                     </Border>
 
-                    <Button Name="btnCheck" Content="CHECK SERVER"
+                    <Button Name="btnCheck" Content="CHECK STATUS"
                             Height="36" Margin="0,10,0,0"
                             Style="{StaticResource PrimaryButton}"/>
 
@@ -111,13 +105,82 @@ Add-Type -AssemblyName WindowsBase
                             Style="{StaticResource GhostButton}"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="2" Margin="0,26,0,0">
-                    <TextBlock Text="STATUS" Foreground="#7A8AA0"
+                <!-- QUICK ACTIONS (compact) -->
+                <StackPanel Grid.Row="2" Margin="0,18,0,0">
+                    <TextBlock Text="QUICK ACTIONS" Foreground="#7A8AA0"
+                               FontSize="10" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                    <Button Name="btnRdpConnect"
+                            Content="Start RDP Connection"
+                            Height="26" Margin="0,0,0,4"
+                            Style="{StaticResource GhostButton}"
+                            FontSize="10.5" FontWeight="SemiBold"
+                            IsEnabled="False"
+                            HorizontalContentAlignment="Center"/>
+
+                    <Button Name="btnRemoteServices"
+                            Content="Access Remote Services"
+                            Height="26" Margin="0,0,0,4"
+                            Style="{StaticResource GhostButton}"
+                            FontSize="10.5" FontWeight="SemiBold"
+                            IsEnabled="False"
+                            HorizontalContentAlignment="Center"/>
+
+                    <Button Name="btnSmbCShare"
+                            Content="Explore SMB File System"
+                            Height="26"
+                            Style="{StaticResource GhostButton}"
+                            FontSize="10.5" FontWeight="SemiBold"
+                            IsEnabled="False"
+                            HorizontalContentAlignment="Center"/>
+
+                    <TextBlock Name="txtActionsHint"
+                               Text="Check a server first."
+                               Foreground="#5B6B7F" FontSize="10"
+                               TextWrapping="Wrap" Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <!-- PORT CHECK -->
+                <StackPanel Grid.Row="3" Margin="0,18,0,0">
+                    <TextBlock Text="PORT CHECK" Foreground="#7A8AA0"
+                               FontSize="10" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="6"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="#121A24" CornerRadius="6" Padding="2">
+                            <TextBox Name="txtPort" Height="26" FontSize="12"
+                                     Background="#121A24" Foreground="#E6ECF4"
+                                     BorderThickness="0" Padding="10,4"
+                                     VerticalContentAlignment="Center"
+                                     CaretBrush="#5B9BFF"
+                                     Text="443"/>
+                        </Border>
+
+                        <Button Grid.Column="2" Name="btnTryPort" Content="TEST"
+                                Height="26" Padding="12,0"
+                                Style="{StaticResource GhostButton}"
+                                FontSize="10.5" FontWeight="SemiBold"
+                                HorizontalContentAlignment="Center"/>
+                    </Grid>
+
+                    <TextBlock Name="txtPortResult" Text=""
+                               FontSize="12" TextWrapping="Wrap"
+                               FontWeight="Normal"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="5">
+                    <TextBlock Text="SUMMARY" Foreground="#7A8AA0"
                                FontSize="10" FontWeight="Bold" Margin="0,0,0,8"/>
                     <Border Background="#121A24" CornerRadius="6" Padding="12">
                         <StackPanel>
                             <TextBlock Name="txtStatus"
-                                       Text="Enter a server name and click Check Server."
+                                       Text="Enter a server name and click Check."
                                        Foreground="#E6ECF4" FontSize="12"
                                        FontWeight="SemiBold"
                                        TextWrapping="Wrap" LineHeight="17"/>
@@ -265,6 +328,14 @@ Add-Type -AssemblyName WindowsBase
                                            Style="{StaticResource CardTitle}"
                                            Margin="0,0,0,12"/>
 
+                                <TextBlock Text="HOSTNAME (IP)"
+                                           Style="{StaticResource SubtleLabel}"
+                                           Foreground="#2563EB"
+                                           Margin="0,0,0,4"/>
+                                <TextBlock Name="txtHostIp" Text="—"
+                                           Style="{StaticResource MonoValue}"
+                                           Margin="0,0,0,12"/>
+
                                 <TextBlock Text="OPERATING SYSTEM"
                                            Style="{StaticResource SubtleLabel}"
                                            Foreground="#0E7490"
@@ -325,19 +396,35 @@ Add-Type -AssemblyName WindowsBase
                             </StackPanel>
                         </Grid>
 
+                        <!-- FILTER ROW: Search (left) | State | spacer | Refresh -->
                         <Grid Grid.Row="1" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="170"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0" Text="State:"
+                            <TextBlock Grid.Column="0" Text="Search:"
                                        Foreground="#7A8AA0" FontSize="11"
                                        VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <ComboBox Grid.Column="1" Name="cmbStateFilter" Width="150" Height="28"
+                            <Border Grid.Column="1" Background="White"
+                                    BorderBrush="#D5DCE5" BorderThickness="1"
+                                    CornerRadius="4"
+                                    ToolTip="Filter sessions by username (substring, case-insensitive)">
+                                <TextBox Name="txtSearchUser" Height="26"
+                                         BorderThickness="0" Background="Transparent"
+                                         Padding="8,0" VerticalContentAlignment="Center"
+                                         FontSize="12" Foreground="#1F2933"
+                                         CaretBrush="#2563EB"/>
+                            </Border>
+
+                            <TextBlock Grid.Column="2" Text="State:"
+                                       Foreground="#7A8AA0" FontSize="11"
+                                       VerticalAlignment="Center" Margin="14,0,6,0"/>
+                            <ComboBox Grid.Column="3" Name="cmbStateFilter" Height="28"
                                       Background="White" Foreground="#1F2933"
                                       BorderBrush="#D5DCE5" SelectedIndex="0"
                                       VerticalContentAlignment="Center">
@@ -346,52 +433,126 @@ Add-Type -AssemblyName WindowsBase
                                 <ComboBoxItem Content="Disconnected only"/>
                             </ComboBox>
 
-                            <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                <Button Name="btnCheckSession" Content="Refresh List"
-                                        Height="28" Padding="14,0" Margin="0,0,6,0"
-                                        Background="#0F766E" Foreground="White"
-                                        BorderThickness="0" FontWeight="Bold"
-                                        Cursor="Hand" FontSize="11"/>
-                                <Button Name="btnCopyUsers" Content="Copy"
-                                        Height="28" Padding="14,0"
-                                        Background="#EEF1F5" Foreground="#334155"
-                                        BorderThickness="0" Cursor="Hand"
-                                        FontSize="11"/>
-                            </StackPanel>
+                            <Button Grid.Column="5" Name="btnCheckSession" Content="Refresh List"
+                                    Height="28" Padding="14,0"
+                                    Background="#0F766E" Foreground="White"
+                                    BorderThickness="0" FontWeight="Bold"
+                                    Cursor="Hand" FontSize="11"/>
                         </Grid>
 
-                        <ListBox Grid.Row="2" Name="lstSessions"
-                                 Background="#F8FAFC"
-                                 Foreground="#1F2933"
-                                 BorderBrush="#E2E6EC" BorderThickness="1"
-                                 FontFamily="Consolas" FontSize="12"
-                                 SelectionMode="Single"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="Padding" Value="8,4"/>
-                                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#EAF2FF"/>
-                                        </Trigger>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="#DBEAFE"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Display}"
-                                               Foreground="{Binding Color}"
-                                               FontFamily="Consolas"
-                                               FontSize="12"/>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <!-- ============ sessions table: header + list ============ -->
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Column header row -->
+                            <Border Grid.Row="0" Background="#EDF0F4"
+                                    BorderBrush="#D5DCE5" BorderThickness="1,1,1,0"
+                                    CornerRadius="6,6,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="105"/>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
+                                        <TextBlock Text="USER" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    </Border>
+                                    <Border Grid.Column="1" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
+                                        <TextBlock Text="SESSION" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    </Border>
+                                    <Border Grid.Column="2" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
+                                        <TextBlock Text="STATE" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    </Border>
+                                    <Border Grid.Column="3" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
+                                        <TextBlock Text="CLIENT" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    </Border>
+                                    <Border Grid.Column="4" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
+                                        <TextBlock Text="IDLE" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    </Border>
+                                    <Border Grid.Column="5" Padding="10,7">
+                                        <TextBlock Text="LOGON TIME" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <!-- Session list -->
+                            <ListBox Grid.Row="1" Name="lstSessions"
+                                     Background="#F8FAFC"
+                                     Foreground="#1F2933"
+                                     BorderBrush="#D5DCE5" BorderThickness="1,0,1,1"
+                                     FontFamily="Consolas" FontSize="12"
+                                     SelectionMode="Single"
+                                     HorizontalContentAlignment="Stretch"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#EAF2FF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#DBEAFE"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150"/>
+                                                <ColumnDefinition Width="65"/>
+                                                <ColumnDefinition Width="105"/>
+                                                <ColumnDefinition Width="160"/>
+                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Column="0" BorderBrush="#E2E6EC" BorderThickness="0,0,1,0" Padding="10,4">
+                                                <TextBlock Text="{Binding User}" VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{Binding Color}"/>
+                                            </Border>
+                                            <Border Grid.Column="1" BorderBrush="#E2E6EC" BorderThickness="0,0,1,0" Padding="10,4">
+                                                <TextBlock Text="{Binding SessionId}" VerticalAlignment="Center"
+                                                           Foreground="{Binding Color}"/>
+                                            </Border>
+                                            <Border Grid.Column="2" BorderBrush="#E2E6EC" BorderThickness="0,0,1,0" Padding="10,4">
+                                                <TextBlock Text="{Binding State}" VerticalAlignment="Center"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{Binding Color}"/>
+                                            </Border>
+                                            <Border Grid.Column="3" BorderBrush="#E2E6EC" BorderThickness="0,0,1,0" Padding="10,4">
+                                                <TextBlock Text="{Binding Client}" VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding ClientAddress}"
+                                                           Foreground="{Binding Color}"/>
+                                            </Border>
+                                            <Border Grid.Column="4" BorderBrush="#E2E6EC" BorderThickness="0,0,1,0" Padding="10,4">
+                                                <TextBlock Text="{Binding Idle}" VerticalAlignment="Center"
+                                                           Foreground="{Binding Color}"/>
+                                            </Border>
+                                            <Border Grid.Column="5" Padding="10,4">
+                                                <TextBlock Text="{Binding LogonTime}" VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{Binding Color}"/>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
 
                         <Grid Grid.Row="3" Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
@@ -422,39 +583,46 @@ Add-Type -AssemblyName WindowsBase
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
-$txtServer       = $window.FindName("txtServer")
-$btnCheck        = $window.FindName("btnCheck")
-$btnClear        = $window.FindName("btnClear")
-$txtStatus       = $window.FindName("txtStatus")
-$txtFooter       = $window.FindName("txtFooter")
-$txtCpuPct       = $window.FindName("txtCpuPct")
-$txtCpuShort     = $window.FindName("txtCpuShort")
-$txtRamPct       = $window.FindName("txtRamPct")
-$txtRamShort     = $window.FindName("txtRamShort")
-$txtDiskPct      = $window.FindName("txtDiskPct")
-$txtDiskShort    = $window.FindName("txtDiskShort")
-$txtNetShort     = $window.FindName("txtNetShort")
-$txtOsVersion    = $window.FindName("txtOsVersion")
-$txtDateTime     = $window.FindName("txtDateTime")
-$txtBootTime     = $window.FindName("txtBootTime")
-$lstSessions     = $window.FindName("lstSessions")
-$txtSelInfo      = $window.FindName("txtSelInfo")
-$btnCheckSession = $window.FindName("btnCheckSession")
-$btnCopyUsers    = $window.FindName("btnCopyUsers")
-$btnDisconnect   = $window.FindName("btnDisconnect")
-$btnRefreshTime  = $window.FindName("btnRefreshTime")
-$cmbStateFilter  = $window.FindName("cmbStateFilter")
-$pbCpu           = $window.FindName("pbCpu")
-$pbRam           = $window.FindName("pbRam")
-$pbDisk          = $window.FindName("pbDisk")
-$pbNetRx         = $window.FindName("pbNetRx")
-$pbNetTx         = $window.FindName("pbNetTx")
+$txtServer         = $window.FindName("txtServer")
+$btnCheck          = $window.FindName("btnCheck")
+$btnClear          = $window.FindName("btnClear")
+$txtStatus         = $window.FindName("txtStatus")
+$txtFooter         = $window.FindName("txtFooter")
+$txtCpuPct         = $window.FindName("txtCpuPct")
+$txtCpuShort       = $window.FindName("txtCpuShort")
+$txtRamPct         = $window.FindName("txtRamPct")
+$txtRamShort       = $window.FindName("txtRamShort")
+$txtDiskPct        = $window.FindName("txtDiskPct")
+$txtDiskShort      = $window.FindName("txtDiskShort")
+$txtNetShort       = $window.FindName("txtNetShort")
+$txtHostIp         = $window.FindName("txtHostIp")
+$txtOsVersion      = $window.FindName("txtOsVersion")
+$txtDateTime       = $window.FindName("txtDateTime")
+$txtBootTime       = $window.FindName("txtBootTime")
+$lstSessions       = $window.FindName("lstSessions")
+$txtSelInfo        = $window.FindName("txtSelInfo")
+$btnCheckSession   = $window.FindName("btnCheckSession")
+$btnDisconnect     = $window.FindName("btnDisconnect")
+$btnRefreshTime    = $window.FindName("btnRefreshTime")
+$cmbStateFilter    = $window.FindName("cmbStateFilter")
+$txtSearchUser     = $window.FindName("txtSearchUser")
+$pbCpu             = $window.FindName("pbCpu")
+$pbRam             = $window.FindName("pbRam")
+$pbDisk            = $window.FindName("pbDisk")
+$pbNetRx           = $window.FindName("pbNetRx")
+$pbNetTx           = $window.FindName("pbNetTx")
+$btnRdpConnect     = $window.FindName("btnRdpConnect")
+$btnRemoteServices = $window.FindName("btnRemoteServices")
+$btnSmbCShare      = $window.FindName("btnSmbCShare")
+$txtActionsHint    = $window.FindName("txtActionsHint")
+$txtPort           = $window.FindName("txtPort")
+$btnTryPort        = $window.FindName("btnTryPort")
+$txtPortResult     = $window.FindName("txtPortResult")
 
 # ---------------- Shared state (thread-safe) ----------------
 $script:SharedState = [hashtable]::Synchronized(@{
     ServerName     = $null
     UserData       = @()
-    UsersText      = $null
     NonWindowsHint = $false
     LastTtl        = $null
 })
@@ -550,6 +718,23 @@ function Format-OSVersion {
     if ($InstallDate) { $lines += "Installed : $InstallDate" }
     if ($lines.Count -eq 0) { $lines += "OS version information unavailable." }
     return ($lines -join "`n")
+}
+
+function Format-HostIp {
+    param(
+        [string]$HostName,
+        [string[]]$IpAddresses
+    )
+
+    $name = if ($HostName) { $HostName } else { "unknown" }
+    $ips  = @($IpAddresses |
+             Where-Object { $_ -and $_ -notmatch '^(127\.|169\.254\.|::1|fe80:)' } |
+             Select-Object -Unique)
+
+    if ($ips.Count -eq 0) {
+        return "$name  (no IP resolved)"
+    }
+    return ("{0}  ({1})" -f $name, ($ips -join ", "))
 }
 
 # ===========================================================================
@@ -771,6 +956,137 @@ function Parse-QuserOutput {
 }
 
 # ===========================================================================
+# WTS API helper: RDP client name + IP per session
+# ===========================================================================
+function Initialize-WtsHelper {
+    if ('RemoteMonitor.WtsHelper' -as [type]) { return }
+
+    $cs = @"
+using System;
+using System.Runtime.InteropServices;
+
+namespace RemoteMonitor {
+    public static class WtsHelper {
+        [DllImport("wtsapi32.dll", EntryPoint = "WTSOpenServerA",
+                   SetLastError = true, CharSet = CharSet.Ansi)]
+        private static extern IntPtr WTSOpenServerA(string pServerName);
+
+        [DllImport("wtsapi32.dll")]
+        private static extern void WTSCloseServer(IntPtr hServer);
+
+        [DllImport("wtsapi32.dll", EntryPoint = "WTSQuerySessionInformationA",
+                   SetLastError = true)]
+        private static extern bool WTSQuerySessionInformationA(
+            IntPtr hServer, int sessionId, int wtsInfoClass,
+            out IntPtr ppBuffer, out int pBytesReturned);
+
+        [DllImport("wtsapi32.dll")]
+        private static extern void WTSFreeMemory(IntPtr pMemory);
+
+        private const int WTSClientName    = 10;
+        private const int WTSClientAddress = 14;
+        private const int AF_INET          = 2;
+
+        private static string[] QueryOne(IntPtr hServer, int sessionId) {
+            string[] result = new string[] { null, null };
+
+            IntPtr buffer = IntPtr.Zero; int bytes = 0;
+            try {
+                if (WTSQuerySessionInformationA(hServer, sessionId,
+                        WTSClientName, out buffer, out bytes)
+                    && buffer != IntPtr.Zero) {
+                    result[0] = Marshal.PtrToStringAnsi(buffer);
+                }
+            } finally {
+                if (buffer != IntPtr.Zero) { WTSFreeMemory(buffer); }
+            }
+
+            buffer = IntPtr.Zero; bytes = 0;
+            try {
+                if (WTSQuerySessionInformationA(hServer, sessionId,
+                        WTSClientAddress, out buffer, out bytes)
+                    && buffer != IntPtr.Zero) {
+
+                    int family = Marshal.ReadInt32(buffer, 0);
+                    if (family == AF_INET) {
+                        byte[] raw = new byte[20];
+                        Marshal.Copy(new IntPtr(buffer.ToInt64() + 4), raw, 0, 20);
+
+                        byte b0 = raw[4], b1 = raw[5], b2 = raw[6], b3 = raw[7];
+                        if (b0 == 0 && b1 == 0 && b2 == 0 && b3 == 0) {
+                            b0 = raw[0]; b1 = raw[1]; b2 = raw[2]; b3 = raw[3];
+                        }
+                        if (!(b0 == 0 && b1 == 0 && b2 == 0 && b3 == 0)) {
+                            result[1] = string.Format("{0}.{1}.{2}.{3}", b0, b1, b2, b3);
+                        }
+                    }
+                }
+            } finally {
+                if (buffer != IntPtr.Zero) { WTSFreeMemory(buffer); }
+            }
+            return result;
+        }
+
+        public static string[][] QueryAllClients(string server, int[] sessionIds) {
+            string[][] results = new string[sessionIds.Length][];
+            IntPtr hServer = IntPtr.Zero;
+            try {
+                hServer = WTSOpenServerA(server);
+                if (hServer == IntPtr.Zero) {
+                    for (int i = 0; i < sessionIds.Length; i++)
+                        results[i] = new string[] { null, null };
+                    return results;
+                }
+                for (int i = 0; i < sessionIds.Length; i++)
+                    results[i] = QueryOne(hServer, sessionIds[i]);
+            } finally {
+                if (hServer != IntPtr.Zero) { WTSCloseServer(hServer); }
+            }
+            return results;
+        }
+    }
+}
+"@
+    Add-Type -TypeDefinition $cs -ErrorAction SilentlyContinue
+}
+
+function Get-RdpClientInfo {
+    param(
+        [string]$Server,
+        [int[]]$SessionIds
+    )
+
+    $map = @{}
+    if (-not $SessionIds -or $SessionIds.Count -eq 0) { return $map }
+
+    $ids = @($SessionIds | Select-Object -Unique)
+
+    try { Initialize-WtsHelper } catch { }
+    if (-not ('RemoteMonitor.WtsHelper' -as [type])) {
+        foreach ($sid in $ids) {
+            $map[[int]$sid] = [PSCustomObject]@{ Name = ""; Address = "" }
+        }
+        return $map
+    }
+
+    $target = if ([string]::IsNullOrWhiteSpace($Server)) { $env:COMPUTERNAME } else { $Server }
+
+    $rows = $null
+    try { $rows = [RemoteMonitor.WtsHelper]::QueryAllClients($target, [int[]]$ids) } catch { }
+
+    for ($i = 0; $i -lt $ids.Count; $i++) {
+        $sid  = [int]$ids[$i]
+        $name = ""; $addr = ""
+        if ($rows -and $i -lt $rows.Length -and $rows[$i]) {
+            if ($rows[$i][0]) { $name = [string]$rows[$i][0] }
+            if ($rows[$i][1]) { $addr = [string]$rows[$i][1] }
+        }
+        $map[$sid] = [PSCustomObject]@{ Name = $name; Address = $addr }
+    }
+    return $map
+}
+
+# ===========================================================================
 # Remote sessions - RDP only (quser primary, qwinsta fallback)
 # ===========================================================================
 function Get-RemoteSessions {
@@ -852,6 +1168,30 @@ function Get-RemoteSessions {
         } catch { }
     }
 
+    # ---- enrich with RDP client name / IP (WTS API) ----
+    if ($sessions -and $sessions.Count -gt 0) {
+        $ids = @($sessions | ForEach-Object { $_.SessionId })
+        try { $clientMap = Get-RdpClientInfo -Server $Server -SessionIds $ids }
+        catch { $clientMap = @{} }
+
+        foreach ($s in $sessions) {
+            $info = $null
+            if ($clientMap.ContainsKey([int]$s.SessionId)) {
+                $info = $clientMap[[int]$s.SessionId]
+            }
+            $name = if ($info -and $info.Name)    { $info.Name }    else { "" }
+            $addr = if ($info -and $info.Address) { $info.Address } else { "" }
+
+            # Display: hostname only. IP is kept on the object (ClientAddress)
+            # for tooltips, but no longer shown in the grid column.
+            $display = if ($name) { $name } else { "—" }
+
+            Add-Member -InputObject $s -NotePropertyName ClientName    -NotePropertyValue $name    -Force
+            Add-Member -InputObject $s -NotePropertyName ClientAddress -NotePropertyValue $addr    -Force
+            Add-Member -InputObject $s -NotePropertyName ClientDisplay -NotePropertyValue $display -Force
+        }
+    }
+
     return $sessions
 }
 
@@ -865,10 +1205,13 @@ function Get-SharedFunctionSource {
         'Format-ServerDateTime',
         'Format-BootTime',
         'Format-OSVersion',
+        'Format-HostIp',
         'Resolve-IfIP',
         'Get-PingTtl',
         'Get-NetworkThroughput',
         'Parse-QuserOutput',
+        'Initialize-WtsHelper',
+        'Get-RdpClientInfo',
         'Get-RemoteSessions'
     )
     $sb = New-Object System.Text.StringBuilder
@@ -933,6 +1276,7 @@ function Reset-UI {
     $txtDiskShort.Text  = "—"
     $txtDiskShort.ToolTip = $null
     $txtNetShort.Text   = "—"
+    $txtHostIp.Text     = "—"
     $txtOsVersion.Text  = "—"
     $txtDateTime.Text   = "—"
     $txtBootTime.Text   = "—"
@@ -945,27 +1289,38 @@ function Reset-UI {
     $txtSelInfo.Text = "No session selected."
     $btnDisconnect.IsEnabled = $false
 
+    $btnRdpConnect.IsEnabled     = $false
+    $btnRemoteServices.IsEnabled = $false
+    $btnSmbCShare.IsEnabled      = $false
+    $txtActionsHint.Text = "Check a server first."
+
+    $txtPortResult.Text = ""
+    $txtPortResult.FontWeight = 'Normal'
+    $txtPortResult.Foreground = [System.Windows.Media.Brushes]::LightGray
+
     $script:SharedState.ServerName     = $null
     $script:SharedState.UserData       = @()
-    $script:SharedState.UsersText      = $null
     $script:SharedState.NonWindowsHint = $false
     $script:SharedState.LastTtl        = $null
 
     $cmbStateFilter.SelectedIndex = 0
+    $txtSearchUser.Text = ""
 }
 
 # ===========================================================================
 # Render sessions
 # ===========================================================================
 function Render-Sessions {
-    param([string]$Filter = "All")
+    param(
+        [string]$Filter = "All",
+        [string]$Search = ""
+    )
 
     $userData = $script:SharedState.UserData
 
     if (-not $userData -or @($userData).Count -eq 0) {
         $lstSessions.ItemsSource = @()
         $txtSelInfo.Text = "No remote (RDP) sessions currently connected."
-        $script:SharedState.UsersText = $txtSelInfo.Text
         return
     }
 
@@ -977,49 +1332,53 @@ function Render-Sessions {
         default             { $all }
     }
 
+    # Apply username (login) substring filter
+    $needle = if ($Search) { $Search.Trim() } else { "" }
+    if ($needle) {
+        $filtered = @($filtered) | Where-Object {
+            $_.User -and
+            ($_.User.ToString().IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0)
+        }
+    }
+
     if (-not $filtered -or @($filtered).Count -eq 0) {
         $lstSessions.ItemsSource = @()
-        $txtSelInfo.Text = "No sessions match the current filter ($Filter)."
-        $script:SharedState.UsersText = $txtSelInfo.Text
+        if ($needle) {
+            $txtSelInfo.Text = "No sessions match '$needle' (filter: $Filter)."
+        } else {
+            $txtSelInfo.Text = "No sessions match the current filter ($Filter)."
+        }
         return
     }
 
     $sorted = $filtered | Sort-Object @{Expression={ $_.State -ieq 'Disconnected' }}, User
 
     $rows = @()
-    $textLines = @()
-    $textLines += ("{0,-22} {1,-8} {2,-14} {3,-18} {4,-10} {5}" -f "USER", "SESSION", "STATE", "STATION", "IDLE", "LOGON TIME")
-    $textLines += ("-" * 100)
-
     foreach ($s in $sorted) {
-        $userStr = [string]$s.User
-        if ($userStr.Length -gt 22) { $userStr = $userStr.Substring(0, 22) }
-        $statStr = [string]$s.Station
-        if ($statStr.Length -gt 18) { $statStr = $statStr.Substring(0, 18) }
-
-        $lineText = ("{0,-22} {1,-8} {2,-14} {3,-18} {4,-10} {5}" -f `
-                    $userStr, $s.SessionId, $s.State, $statStr, $s.Idle, $s.LogonTime)
+        $clientStr = [string]$s.ClientDisplay
+        if ([string]::IsNullOrWhiteSpace($clientStr)) { $clientStr = "—" }
 
         $color = if ($s.State -ieq 'Disconnected') { "#9E9E9E" } else { "#2E7D32" }
 
         $rows += [PSCustomObject]@{
-            Display = $lineText
-            Color   = $color
-            Session = $s
+            User          = [string]$s.User
+            SessionId     = $s.SessionId
+            State         = [string]$s.State
+            Client        = $clientStr
+            ClientAddress = [string]$s.ClientAddress
+            Idle          = [string]$s.Idle
+            LogonTime     = [string]$s.LogonTime
+            Color         = $color
+            Session       = $s
         }
-        $textLines += $lineText
     }
 
-    $activeCount = @($all | Where-Object { $_.State -ieq 'Active' }).Count
-    $discCount   = @($all | Where-Object { $_.State -ieq 'Disconnected' }).Count
-    $textLines += ""
-    $textLines += ("Total: {0}  |  Active: {1}  |  Disconnected: {2}   [filter: {3}]" -f `
-                    @($all).Count, $activeCount, $discCount, $Filter)
-
     $lstSessions.ItemsSource = $rows
-    $script:SharedState.UsersText = $textLines -join "`n"
 
-    $txtSelInfo.Text = ("Showing {0} session(s). Select a row to enable Disconnect." -f @($rows).Count)
+    $suffix = ""
+    if ($needle) { $suffix = "  |  search: '$needle'" }
+    $txtSelInfo.Text = ("Showing {0} of {1} session(s){2}. Select a row to enable Disconnect." -f `
+                        @($rows).Count, @($all).Count, $suffix)
     $btnDisconnect.IsEnabled = $false
 }
 
@@ -1028,11 +1387,11 @@ function Render-Sessions {
 # ---------------------------------------------------------------------------
 $script:RefreshSessionsAction = [action]{
     if ($script:SharedState.UserData -and @($script:SharedState.UserData).Count -gt 0) {
-        Render-Sessions -Filter $cmbStateFilter.SelectedItem.Content
+        $search = if ($txtSearchUser) { $txtSearchUser.Text } else { "" }
+        Render-Sessions -Filter $cmbStateFilter.SelectedItem.Content -Search $search
     } else {
         $lstSessions.ItemsSource = @()
         $txtSelInfo.Text = "No remote (RDP) sessions currently connected."
-        $script:SharedState.UsersText = $txtSelInfo.Text
     }
 }
 
@@ -1100,6 +1459,10 @@ try {
                 $Window.FindName('txtStatus').Text = "Sessions loaded ($sessionCount). Querying resources..."
             }
             $Window.FindName('btnCheckSession').IsEnabled = $true
+            $Window.FindName('btnRdpConnect').IsEnabled     = $true
+            $Window.FindName('btnRemoteServices').IsEnabled = $true
+            $Window.FindName('btnSmbCShare').IsEnabled      = $true
+            $Window.FindName('txtActionsHint').Text         = "Target: $ServerName"
         }
     } catch {
         $msg = $_.Exception.Message
@@ -1114,11 +1477,22 @@ try {
     if ($SharedState.NonWindowsHint) {
         $timeStr = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
         $ttlText = if ($null -ne $ttl) { "TTL=$ttl" } else { "TTL=?" }
+
+        try {
+            $ipList = @()
+            try {
+                $entry  = [System.Net.Dns]::GetHostEntry($ServerName)
+                $ipList = @($entry.AddressList | ForEach-Object { $_.IPAddressToString })
+            } catch { }
+            $hostIpText = Format-HostIp -HostName $ServerName -IpAddresses $ipList
+            Update-UI { $Window.FindName('txtHostIp').Text = $hostIpText }
+        } catch { }
+
         Update-UI {
             $Window.FindName('txtStatus').Text =
                 "⚠ '$ServerName' appears to be a non-Windows host ($ttlText). Resource metrics skipped."
             $Window.FindName('txtFooter').Text =
-                "Last check: $timeStr  |  Target: $ServerName  |  v2.1.3  |  ⚠ $ttlText (non-Windows?)"
+                "Last check: $timeStr  |  Target: $ServerName  |  v2.2.6  |  ⚠ $ttlText (non-Windows?)"
         }
         return
     }
@@ -1138,6 +1512,28 @@ try {
             $Window.FindName('txtFooter').Text = "Failed at $(Get-Date -Format 'HH:mm:ss')"
         }
         return
+    }
+
+    # ---- Hostname / IP line ----
+    try {
+        $resolvedHost = $ServerName
+        $ipList       = @()
+        try {
+            $entry = [System.Net.Dns]::GetHostEntry($ServerName)
+            if ($entry.HostName) { $resolvedHost = $entry.HostName.Split('.')[0] }
+            $ipList = @($entry.AddressList | ForEach-Object { $_.IPAddressToString })
+        } catch {
+            try {
+                $ping = & ping -4 -n 1 -w 1000 $ServerName 2>$null
+                if ($ping -match '\[([\d\.]+)\]') { $ipList = @($matches[1]) }
+            } catch { }
+        }
+
+        $hostIpText = Format-HostIp -HostName $resolvedHost -IpAddresses $ipList
+        Update-UI { $Window.FindName('txtHostIp').Text = $hostIpText }
+    } catch {
+        $msg = "Host/IP query failed: $($_.Exception.Message)"
+        Update-UI { $Window.FindName('txtHostIp').Text = $msg }
     }
 
     # CPU
@@ -1313,7 +1709,7 @@ try {
     $ttlText = if ($null -ne $ttl) { "TTL=$ttl" } else { "" }
     Update-UI {
         $Window.FindName('txtStatus').Text = "Successfully queried '$ServerName'."
-        $Window.FindName('txtFooter').Text = "Last check: $timeStr  |  Target: $ServerName  |  v2.1.3  |  $ttlText"
+        $Window.FindName('txtFooter').Text = "Last check: $timeStr  |  Target: $ServerName  |  v2.2.6  |  $ttlText"
     }
 }
 catch {
@@ -1352,7 +1748,7 @@ try {
 
     $timeStr = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     Update-UI {
-        $Window.FindName('txtFooter').Text = "RDP session list refreshed: $timeStr  |  Target: $ServerName  |  v2.1.3"
+        $Window.FindName('txtFooter').Text = "RDP session list refreshed: $timeStr  |  Target: $ServerName  |  v2.2.6"
     }
 }
 catch {
@@ -1386,7 +1782,7 @@ try {
         $timeStr = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
         Update-UI {
             $Window.FindName('txtStatus').Text = "Disconnected user '$UserName' (session $SessionId) from $ServerName."
-            $Window.FindName('txtFooter').Text = "Disconnect at $timeStr  |  Target: $ServerName  |  v2.1.3"
+            $Window.FindName('txtFooter').Text = "Disconnect at $timeStr  |  Target: $ServerName  |  v2.2.6"
         }
     } else {
         $msg = "Disconnect failed (exit $exit): $output"
@@ -1403,6 +1799,51 @@ finally {
     try {
         $Window.Dispatcher.Invoke($ReloadAction, [System.Windows.Threading.DispatcherPriority]::Background)
     } catch { }
+}
+'@
+
+# ===========================================================================
+# Background script: Port check
+# ===========================================================================
+$script:PortCheckScript = @'
+param($ServerName, $Port)
+
+function Update-UI {
+    param([scriptblock]$Action)
+    $Window.Dispatcher.Invoke($Action, [System.Windows.Threading.DispatcherPriority]::Background)
+}
+
+try {
+    $result = Test-NetConnection -ComputerName $ServerName -Port $Port `
+              -WarningAction SilentlyContinue -ErrorAction Stop
+
+    $reachable = $false
+    if ($result -and $result.PSObject.Properties['TcpTestSucceeded']) {
+        $reachable = [bool]$result.TcpTestSucceeded
+    }
+
+    Update-UI {
+        $tb = $Window.FindName('txtPortResult')
+        $tb.FontWeight = 'Bold'
+        if ($reachable) {
+            $tb.Text = "Port test successful."
+            $tb.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#4ADE80')
+        } else {
+            $tb.Text = "Can't reach this port."
+            $tb.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F87171')
+        }
+    }
+}
+catch {
+    Update-UI {
+        $tb = $Window.FindName('txtPortResult')
+        $tb.Text = "Unreachable"
+        $tb.FontWeight = 'Bold'
+        $tb.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F87171')
+    }
+}
+finally {
+    Update-UI { $Window.FindName('btnTryPort').IsEnabled = $true }
 }
 '@
 
@@ -1468,14 +1909,15 @@ function Show-DisconnectConfirmation {
     $escServer  = [System.Security.SecurityElement]::Escape($Server)
     $escState   = [System.Security.SecurityElement]::Escape($Session.State)
     $escLogon   = [System.Security.SecurityElement]::Escape([string]$Session.LogonTime)
-    $escSession = [System.Security.SecurityElement]::Escape("ID $($Session.SessionId)  ($($Session.Station))")
+    $escSession = [System.Security.SecurityElement]::Escape("ID $($Session.SessionId)")
+    $escClient  = [System.Security.SecurityElement]::Escape([string]$Session.ClientDisplay)
 
     $stateColor = if ($Session.State -ieq 'Disconnected') { "#9E9E9E" } else { "#2E7D32" }
 
     $confirmXaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Confirm Disconnect" Height="470" Width="640"
+        Title="Confirm Disconnect" Height="510" Width="640"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         SizeToContent="Manual"
@@ -1517,6 +1959,7 @@ function Show-DisconnectConfirmation {
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Server:"
@@ -1531,15 +1974,21 @@ function Show-DisconnectConfirmation {
                                Foreground="#1F2933" FontSize="13" Margin="0,4"
                                TextWrapping="Wrap"/>
 
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="State:"
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Client:"
                                Foreground="#8A94A6" FontSize="13" Margin="0,4"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="$escState"
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="$escClient"
+                               Foreground="#0F766E" FontSize="13" FontWeight="Bold" Margin="0,4"
+                               TextWrapping="Wrap"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="State:"
+                               Foreground="#8A94A6" FontSize="13" Margin="0,4"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="$escState"
                                Foreground="$stateColor" FontSize="13" FontWeight="Bold" Margin="0,4"
                                TextWrapping="Wrap"/>
 
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Logon:"
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Logon:"
                                Foreground="#8A94A6" FontSize="13" Margin="0,4"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="$escLogon"
+                    <TextBlock Grid.Row="4" Grid.Column="1" Text="$escLogon"
                                Foreground="#1F2933" FontSize="13" Margin="0,4"
                                TextWrapping="Wrap"/>
                 </Grid>
@@ -1627,6 +2076,7 @@ $btnCheck.Add_Click({
 
 $btnClear.Add_Click({
     $txtServer.Text = ""
+    $txtPort.Text = "443"
     Reset-UI
     $txtStatus.Text = "Enter a server name and click Check Server."
     $txtFooter.Text = "Ready"
@@ -1647,31 +2097,28 @@ $btnRefreshTime.Add_Click({
 $cmbStateFilter.Add_SelectionChanged({
     if ($script:SharedState.UserData -and @($script:SharedState.UserData).Count -gt 0) {
         $filter = $cmbStateFilter.SelectedItem.Content
-        Render-Sessions -Filter $filter
+        $search = if ($txtSearchUser) { $txtSearchUser.Text } else { "" }
+        Render-Sessions -Filter $filter -Search $search
+    }
+})
+
+$txtSearchUser.Add_TextChanged({
+    if ($script:SharedState.UserData -and @($script:SharedState.UserData).Count -gt 0) {
+        $filter = $cmbStateFilter.SelectedItem.Content
+        Render-Sessions -Filter $filter -Search $txtSearchUser.Text
     }
 })
 
 $lstSessions.Add_SelectionChanged({
     if ($lstSessions.SelectedItem) {
         $s = $lstSessions.SelectedItem.Session
-        $txtSelInfo.Text = ("Selected: {0}  |  Session {1}  |  {2}" -f $s.User, $s.SessionId, $s.State)
+        $client = if ($s.ClientDisplay) { $s.ClientDisplay } else { "—" }
+        $txtSelInfo.Text = ("Selected: {0}  |  Session {1}  |  {2}  |  Client: {3}" -f `
+                            $s.User, $s.SessionId, $s.State, $client)
         $btnDisconnect.IsEnabled = $true
     } else {
         $txtSelInfo.Text = "No session selected."
         $btnDisconnect.IsEnabled = $false
-    }
-})
-
-$btnCopyUsers.Add_Click({
-    if ($script:SharedState.UsersText) {
-        try {
-            [System.Windows.Clipboard]::SetText($script:SharedState.UsersText)
-            $txtStatus.Text = "Remote session list copied to clipboard."
-        } catch {
-            $txtStatus.Text = "Clipboard error: $($_.Exception.Message)"
-        }
-    } else {
-        $txtStatus.Text = "Nothing to copy. Check Session first."
     }
 })
 
@@ -1694,18 +2141,95 @@ $btnDisconnect.Add_Click({
     Disconnect-Session -Server $server -Session $session
 })
 
+# ---- Quick Actions handlers ----
+$btnRdpConnect.Add_Click({
+    $server = $script:SharedState.ServerName
+    if (-not $server) {
+        $txtStatus.Text = "Check a server first."
+        return
+    }
+    try {
+        Start-Process -FilePath "mstsc.exe" -ArgumentList "/v:$server"
+        $txtStatus.Text = "Launched RDP client for '$server'."
+    } catch {
+        $txtStatus.Text = "RDP launch failed: $($_.Exception.Message)"
+    }
+})
+
+$btnRemoteServices.Add_Click({
+    $server = $script:SharedState.ServerName
+    if (-not $server) {
+        $txtStatus.Text = "Check a server first."
+        return
+    }
+    try {
+        Start-Process -FilePath "mmc.exe" -ArgumentList "services.msc /computer=$server"
+        $txtStatus.Text = "Opening services.msc against '$server'..."
+    } catch {
+        $txtStatus.Text = "Services launch failed: $($_.Exception.Message)"
+    }
+})
+
+$btnSmbCShare.Add_Click({
+    $server = $script:SharedState.ServerName
+    if (-not $server) {
+        $txtStatus.Text = "Check a server first."
+        return
+    }
+    $unc = "\\$server\c$"
+    try {
+        Start-Process -FilePath "explorer.exe" -ArgumentList $unc
+        $txtStatus.Text = "Opening $unc in File Explorer..."
+    } catch {
+        $txtStatus.Text = "SMB open failed: $($_.Exception.Message)"
+    }
+})
+
+# ---- Port Check handler ----
+$btnTryPort.Add_Click({
+    $srv = $txtServer.Text.Trim()
+    if ([string]::IsNullOrWhiteSpace($srv)) {
+        $txtStatus.Text = "Enter a server name first."
+        return
+    }
+
+    $portNum = 0
+    if (-not [int]::TryParse($txtPort.Text.Trim(), [ref]$portNum) -or
+        $portNum -lt 1 -or $portNum -gt 65535) {
+        $txtStatus.Text = "Enter a valid port number (1-65535)."
+        $txtPortResult.Text = ""
+        $txtPortResult.FontWeight = 'Normal'
+        return
+    }
+
+    $resolved = Resolve-IfIP -Server $srv
+
+    $btnTryPort.IsEnabled = $false
+    $txtPortResult.Text = "Checking..."
+    $txtPortResult.FontWeight = 'Normal'
+    $txtPortResult.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#A8B6C8')
+
+    Start-BackgroundTask -ScriptText $script:PortCheckScript `
+        -Arguments @($resolved, $portNum) `
+        -Globals @{
+            Window = $window
+        } | Out-Null
+})
+
 $txtServer.Add_KeyDown({
     if ($_.Key -eq [System.Windows.Input.Key]::Enter) {
         $btnCheck.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
     }
 })
 
+$txtPort.Add_KeyDown({
+    if ($_.Key -eq [System.Windows.Input.Key]::Enter) {
+        $btnTryPort.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
+    }
+})
+
 # ===========================================================================
-# ps2exe / host cleanup
-#   Force-terminate the hosting process when the window closes.
-#   Without this, the ps2exe-wrapped EXE can linger in Task Manager after
-#   the WPF window disappears, because background runspaces keep the host
-#   process alive.
+# Force-terminate host on window close (ps2exe cleanup)
 # ===========================================================================
 $window.Add_Closed({
     try {
@@ -1713,11 +2237,8 @@ $window.Add_Closed({
     } catch { }
 })
 
-# Show window
 $window.ShowDialog() | Out-Null
 
-# Safety net: if the Closed handler somehow didn't run (e.g. ShowDialog
-# returned for another reason), exit the host explicitly.
 try {
     [System.Diagnostics.Process]::GetCurrentProcess().Kill()
 } catch { }
