@@ -30,12 +30,6 @@ All queries run in background runspaces, so the UI never freezes.
 
 ---
 
-## Screenshot
-
-> _Add a screenshot of the GUI here._
-
----
-
 ## Requirements
 
 - **Windows** (client side)
