@@ -1,5 +1,5 @@
 ﻿# Remote Server Monitor - WPF GUI
-# Version 2.2.6 - Live login search filter; Copy button removed
+# Version 2.3.0 - Overview removed; sortable session columns; multi-select disconnect
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
@@ -9,7 +9,7 @@ Add-Type -AssemblyName WindowsBase
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Remote Server Monitor v2.2.6" Height="900" Width="1420"
+        Title="Remote Server Monitor v2.3.0" Height="900" Width="1420"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         Background="#EEF1F5">
@@ -81,7 +81,7 @@ Add-Type -AssemblyName WindowsBase
                                FontSize="11" FontWeight="Bold"/>
                     <TextBlock Text="Remote Console" Foreground="White"
                                FontSize="20" FontWeight="Bold" Margin="0,4,0,0"/>
-                    <TextBlock Text="v2.2.6" Foreground="#5B6B7F"
+                    <TextBlock Text="v2.3.0" Foreground="#5B6B7F"
                                FontSize="10" Margin="0,2,0,0"/>
                 </StackPanel>
 
@@ -96,7 +96,7 @@ Add-Type -AssemblyName WindowsBase
                                  CaretBrush="#5B9BFF"/>
                     </Border>
 
-                    <Button Name="btnCheck" Content="CHECK STATUS"
+                    <Button Name="btnCheck" Content="SHOW STATUS"
                             Height="36" Margin="0,10,0,0"
                             Style="{StaticResource PrimaryButton}"/>
 
@@ -197,21 +197,7 @@ Add-Type -AssemblyName WindowsBase
 
         <!-- ==================== MAIN ==================== -->
         <Grid Grid.Column="1" Margin="20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <Grid Grid.Row="0" Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock Text="Overview" Foreground="#1F2933"
-                               FontSize="22" FontWeight="Bold"/>
-                    <TextBlock Text="Real-time server health and RDP session control"
-                               Foreground="#7A8AA0" FontSize="12" Margin="0,2,0,0"/>
-                </StackPanel>
-            </Grid>
-
-            <Grid Grid.Row="1">
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" MinWidth="400"/>
                     <ColumnDefinition Width="16"/>
@@ -447,7 +433,7 @@ Add-Type -AssemblyName WindowsBase
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Column header row -->
+                            <!-- Column header row (clickable to sort) -->
                             <Border Grid.Row="0" Background="#EDF0F4"
                                     BorderBrush="#D5DCE5" BorderThickness="1,1,1,0"
                                     CornerRadius="6,6,0,0">
@@ -457,38 +443,56 @@ Add-Type -AssemblyName WindowsBase
                                         <ColumnDefinition Width="65"/>
                                         <ColumnDefinition Width="105"/>
                                         <ColumnDefinition Width="160"/>
-                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="95"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <Border Grid.Column="0" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
-                                        <TextBlock Text="USER" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    <Border Grid.Column="0" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0">
+                                        <Button Name="hdrUser" Tag="User" Content="USER"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                FontWeight="Bold" FontSize="10" Foreground="#4A5568"
+                                                Padding="10,7" HorizontalContentAlignment="Left"/>
                                     </Border>
-                                    <Border Grid.Column="1" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
-                                        <TextBlock Text="SESSION" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    <Border Grid.Column="1" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0">
+                                        <Button Name="hdrSession" Tag="SessionId" Content="SESSION"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                FontWeight="Bold" FontSize="10" Foreground="#4A5568"
+                                                Padding="10,7" HorizontalContentAlignment="Left"/>
                                     </Border>
-                                    <Border Grid.Column="2" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
-                                        <TextBlock Text="STATE" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    <Border Grid.Column="2" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0">
+                                        <Button Name="hdrState" Tag="State" Content="STATE"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                FontWeight="Bold" FontSize="10" Foreground="#4A5568"
+                                                Padding="10,7" HorizontalContentAlignment="Left"/>
                                     </Border>
-                                    <Border Grid.Column="3" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
-                                        <TextBlock Text="CLIENT" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    <Border Grid.Column="3" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0">
+                                        <Button Name="hdrClient" Tag="Client" Content="CLIENT"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                FontWeight="Bold" FontSize="10" Foreground="#4A5568"
+                                                Padding="10,7" HorizontalContentAlignment="Left"/>
                                     </Border>
-                                    <Border Grid.Column="4" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0" Padding="10,7">
-                                        <TextBlock Text="IDLE" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    <Border Grid.Column="4" BorderBrush="#D5DCE5" BorderThickness="0,0,1,0">
+                                        <Button Name="hdrIdle" Tag="Idle" Content="IDLE"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                FontWeight="Bold" FontSize="10" Foreground="#4A5568"
+                                                Padding="10,7" HorizontalContentAlignment="Left"/>
                                     </Border>
-                                    <Border Grid.Column="5" Padding="10,7">
-                                        <TextBlock Text="LOGON TIME" FontWeight="Bold" FontSize="10" Foreground="#4A5568"/>
+                                    <Border Grid.Column="5">
+                                        <Button Name="hdrLogon" Tag="LogonTime" Content="LOGON TIME"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                FontWeight="Bold" FontSize="10" Foreground="#4A5568"
+                                                Padding="10,7" HorizontalContentAlignment="Left"/>
                                     </Border>
                                 </Grid>
                             </Border>
 
-                            <!-- Session list -->
+                            <!-- Session list (multi-select via Ctrl/Shift) -->
                             <ListBox Grid.Row="1" Name="lstSessions"
                                      Background="#F8FAFC"
                                      Foreground="#1F2933"
                                      BorderBrush="#D5DCE5" BorderThickness="1,0,1,1"
                                      FontFamily="Consolas" FontSize="12"
-                                     SelectionMode="Single"
+                                     SelectionMode="Extended"
                                      HorizontalContentAlignment="Stretch"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -515,7 +519,7 @@ Add-Type -AssemblyName WindowsBase
                                                 <ColumnDefinition Width="65"/>
                                                 <ColumnDefinition Width="105"/>
                                                 <ColumnDefinition Width="160"/>
-                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="95"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
@@ -618,6 +622,12 @@ $txtActionsHint    = $window.FindName("txtActionsHint")
 $txtPort           = $window.FindName("txtPort")
 $btnTryPort        = $window.FindName("btnTryPort")
 $txtPortResult     = $window.FindName("txtPortResult")
+$hdrUser           = $window.FindName("hdrUser")
+$hdrSession        = $window.FindName("hdrSession")
+$hdrState          = $window.FindName("hdrState")
+$hdrClient         = $window.FindName("hdrClient")
+$hdrIdle           = $window.FindName("hdrIdle")
+$hdrLogon          = $window.FindName("hdrLogon")
 
 # ---------------- Shared state (thread-safe) ----------------
 $script:SharedState = [hashtable]::Synchronized(@{
@@ -626,6 +636,10 @@ $script:SharedState = [hashtable]::Synchronized(@{
     NonWindowsHint = $false
     LastTtl        = $null
 })
+
+# ---------------- Sort state ----------------
+$script:SortColumn    = $null
+$script:SortAscending = $true
 
 # ===========================================================================
 # Formatting helpers
@@ -735,6 +749,61 @@ function Format-HostIp {
         return "$name  (no IP resolved)"
     }
     return ("{0}  ({1})" -f $name, ($ips -join ", "))
+}
+
+# ---------------------------------------------------------------------------
+# Idle time: parse quser's raw IDLE TIME value into minutes
+#   "."        -> 0        (user is actively inputting)
+#   "none"     -> $null    (quser could not report it)
+#   "-" / ""   -> $null    (qwinsta fallback)
+#   "12"       -> 12 min
+#   "1:23"     -> 1 h 23 m
+#   "1+2:34"   -> 1 d 2 h 34 m
+# ---------------------------------------------------------------------------
+function ConvertTo-IdleMinutes {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+    $v = $Value.Trim()
+
+    if ($v -eq '.') { return 0.0 }
+    if ($v -match '(?i)^(none|n/a|-|—)$') { return $null }
+
+    if ($v -match '^(?:(\d+)\+)?(\d{1,3})(?::(\d{1,2}))?$') {
+        $days  = if ($matches[1]) { [double]$matches[1] } else { 0 }
+        if ($matches[3]) {
+            $hours = [double]$matches[2]
+            $mins  = [double]$matches[3]
+        } else {
+            $hours = 0
+            $mins  = [double]$matches[2]   # bare number = minutes
+        }
+        return ($days * 1440 + $hours * 60 + $mins)
+    }
+    return $null
+}
+
+# ---------------------------------------------------------------------------
+# Idle time: minutes -> "Xd Yh Zm" (leading zero components omitted)
+#   $null -> "—"   ;   0 -> "0m"   ;   90 -> "1h 30m"   ;   1500 -> "1d 1h 0m"
+# ---------------------------------------------------------------------------
+function Format-IdleDuration {
+    param([object]$Minutes)
+
+    if ($null -eq $Minutes) { return "—" }
+
+    $total = [int][math]::Floor([double]$Minutes)
+    if ($total -lt 0) { $total = 0 }
+
+    $d = [int][math]::Floor($total / 1440)
+    $h = [int][math]::Floor(($total % 1440) / 60)
+    $m = $total % 60
+
+    $parts = @()
+    if ($d -gt 0) { $parts += "${d}d" }
+    if ($h -gt 0 -or $d -gt 0) { $parts += "${h}h" }
+    $parts += "${m}m"
+    return ($parts -join ' ')
 }
 
 # ===========================================================================
@@ -1168,8 +1237,18 @@ function Get-RemoteSessions {
         } catch { }
     }
 
-    # ---- enrich with RDP client name / IP (WTS API) ----
+    # ---- enrich with normalized idle time + RDP client name / IP (WTS API) ----
     if ($sessions -and $sessions.Count -gt 0) {
+
+        # Normalize idle time once, for both quser and qwinsta results.
+        foreach ($s in $sessions) {
+            $raw  = [string]$s.Idle
+            $mins = ConvertTo-IdleMinutes -Value $raw
+            Add-Member -InputObject $s -NotePropertyName IdleRaw     -NotePropertyValue $raw                        -Force
+            Add-Member -InputObject $s -NotePropertyName IdleMinutes -NotePropertyValue $mins                       -Force
+            Add-Member -InputObject $s -NotePropertyName Idle        -NotePropertyValue (Format-IdleDuration $mins) -Force
+        }
+
         $ids = @($sessions | ForEach-Object { $_.SessionId })
         try { $clientMap = Get-RdpClientInfo -Server $Server -SessionIds $ids }
         catch { $clientMap = @{} }
@@ -1182,8 +1261,6 @@ function Get-RemoteSessions {
             $name = if ($info -and $info.Name)    { $info.Name }    else { "" }
             $addr = if ($info -and $info.Address) { $info.Address } else { "" }
 
-            # Display: hostname only. IP is kept on the object (ClientAddress)
-            # for tooltips, but no longer shown in the grid column.
             $display = if ($name) { $name } else { "—" }
 
             Add-Member -InputObject $s -NotePropertyName ClientName    -NotePropertyValue $name    -Force
@@ -1206,6 +1283,8 @@ function Get-SharedFunctionSource {
         'Format-BootTime',
         'Format-OSVersion',
         'Format-HostIp',
+        'ConvertTo-IdleMinutes',
+        'Format-IdleDuration',
         'Resolve-IfIP',
         'Get-PingTtl',
         'Get-NetworkThroughput',
@@ -1303,8 +1382,63 @@ function Reset-UI {
     $script:SharedState.NonWindowsHint = $false
     $script:SharedState.LastTtl        = $null
 
+    $script:SortColumn    = $null
+    $script:SortAscending = $true
+    Update-SortIndicators
+
     $cmbStateFilter.SelectedIndex = 0
     $txtSearchUser.Text = ""
+}
+
+# ===========================================================================
+# Sort helpers
+# ===========================================================================
+function Update-SortIndicators {
+    $cols = @{
+        'User'      = $hdrUser
+        'SessionId' = $hdrSession
+        'State'     = $hdrState
+        'Client'    = $hdrClient
+        'Idle'      = $hdrIdle
+        'LogonTime' = $hdrLogon
+    }
+    $labels = @{
+        'User'      = 'USER'
+        'SessionId' = 'SESSION'
+        'State'     = 'STATE'
+        'Client'    = 'CLIENT'
+        'Idle'      = 'IDLE'
+        'LogonTime' = 'LOGON TIME'
+    }
+    foreach ($k in $cols.Keys) {
+        $btn = $cols[$k]
+        if (-not $btn) { continue }
+        if ($script:SortColumn -eq $k) {
+            $arrow = if ($script:SortAscending) { ' ▲' } else { ' ▼' }
+            $btn.Content = $labels[$k] + $arrow
+            $btn.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#1D4ED8')
+        } else {
+            $btn.Content = $labels[$k]
+            $btn.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#4A5568')
+        }
+    }
+}
+
+function Invoke-SortByColumn {
+    param([string]$Column)
+    if (-not $Column) { return }
+    if ($script:SortColumn -eq $Column) {
+        $script:SortAscending = -not $script:SortAscending
+    } else {
+        $script:SortColumn    = $Column
+        $script:SortAscending = $true
+    }
+    Update-SortIndicators
+
+    $filter = if ($cmbStateFilter.SelectedItem) { $cmbStateFilter.SelectedItem.Content } else { "All sessions" }
+    $search = if ($txtSearchUser) { $txtSearchUser.Text } else { "" }
+    Render-Sessions -Filter $filter -Search $search `
+                    -SortColumn $script:SortColumn -SortAscending $script:SortAscending
 }
 
 # ===========================================================================
@@ -1313,7 +1447,9 @@ function Reset-UI {
 function Render-Sessions {
     param(
         [string]$Filter = "All",
-        [string]$Search = ""
+        [string]$Search = "",
+        [string]$SortColumn = $null,
+        [bool]$SortAscending = $true
     )
 
     $userData = $script:SharedState.UserData
@@ -1321,6 +1457,7 @@ function Render-Sessions {
     if (-not $userData -or @($userData).Count -eq 0) {
         $lstSessions.ItemsSource = @()
         $txtSelInfo.Text = "No remote (RDP) sessions currently connected."
+        $btnDisconnect.IsEnabled = $false
         return
     }
 
@@ -1332,7 +1469,6 @@ function Render-Sessions {
         default             { $all }
     }
 
-    # Apply username (login) substring filter
     $needle = if ($Search) { $Search.Trim() } else { "" }
     if ($needle) {
         $filtered = @($filtered) | Where-Object {
@@ -1348,10 +1484,23 @@ function Render-Sessions {
         } else {
             $txtSelInfo.Text = "No sessions match the current filter ($Filter)."
         }
+        $btnDisconnect.IsEnabled = $false
         return
     }
 
-    $sorted = $filtered | Sort-Object @{Expression={ $_.State -ieq 'Disconnected' }}, User
+    if ($SortColumn) {
+        if ($SortColumn -eq 'Idle') {
+            # Numeric sort on minutes; unknown idle ("none", "-") always sinks.
+            $dir = if ($SortAscending) { 1 } else { -1 }
+            $sorted = $filtered | Sort-Object -Property `
+                @{ Expression = { $null -eq $_.IdleMinutes } }, `
+                @{ Expression = { if ($null -eq $_.IdleMinutes) { 0 } else { $dir * [double]$_.IdleMinutes } } }
+        } else {
+            $sorted = $filtered | Sort-Object -Property $SortColumn -Descending:(-not $SortAscending)
+        }
+    } else {
+        $sorted = $filtered | Sort-Object @{Expression={ $_.State -ieq 'Disconnected' }}, User
+    }
 
     $rows = @()
     foreach ($s in $sorted) {
@@ -1377,8 +1526,12 @@ function Render-Sessions {
 
     $suffix = ""
     if ($needle) { $suffix = "  |  search: '$needle'" }
-    $txtSelInfo.Text = ("Showing {0} of {1} session(s){2}. Select a row to enable Disconnect." -f `
-                        @($rows).Count, @($all).Count, $suffix)
+    $sortSuffix = if ($SortColumn) {
+        $dir = if ($SortAscending) { '↑' } else { '↓' }
+        "  |  sort: $SortColumn $dir"
+    } else { "" }
+    $txtSelInfo.Text = ("Showing {0} of {1} session(s){2}{3}. Ctrl/Shift-click to select multiple." -f `
+                        @($rows).Count, @($all).Count, $suffix, $sortSuffix)
     $btnDisconnect.IsEnabled = $false
 }
 
@@ -1388,10 +1541,13 @@ function Render-Sessions {
 $script:RefreshSessionsAction = [action]{
     if ($script:SharedState.UserData -and @($script:SharedState.UserData).Count -gt 0) {
         $search = if ($txtSearchUser) { $txtSearchUser.Text } else { "" }
-        Render-Sessions -Filter $cmbStateFilter.SelectedItem.Content -Search $search
+        $filter = if ($cmbStateFilter.SelectedItem) { $cmbStateFilter.SelectedItem.Content } else { "All sessions" }
+        Render-Sessions -Filter $filter -Search $search `
+                        -SortColumn $script:SortColumn -SortAscending $script:SortAscending
     } else {
         $lstSessions.ItemsSource = @()
         $txtSelInfo.Text = "No remote (RDP) sessions currently connected."
+        $btnDisconnect.IsEnabled = $false
     }
 }
 
@@ -1425,7 +1581,6 @@ try {
         throw "Server '$ServerName' is not reachable (ping failed)."
     }
 
-    # TTL heuristic
     $ttl = Get-PingTtl -Server $ServerName
     $SharedState.LastTtl = $ttl
     if ($null -ne $ttl -and $ttl -lt 100) {
@@ -1492,7 +1647,7 @@ try {
             $Window.FindName('txtStatus').Text =
                 "⚠ '$ServerName' appears to be a non-Windows host ($ttlText). Resource metrics skipped."
             $Window.FindName('txtFooter').Text =
-                "Last check: $timeStr  |  Target: $ServerName  |  v2.2.6  |  ⚠ $ttlText (non-Windows?)"
+                "Last check: $timeStr  |  Target: $ServerName  |  v2.3.0  |  ⚠ $ttlText (non-Windows?)"
         }
         return
     }
@@ -1709,7 +1864,7 @@ try {
     $ttlText = if ($null -ne $ttl) { "TTL=$ttl" } else { "" }
     Update-UI {
         $Window.FindName('txtStatus').Text = "Successfully queried '$ServerName'."
-        $Window.FindName('txtFooter').Text = "Last check: $timeStr  |  Target: $ServerName  |  v2.2.6  |  $ttlText"
+        $Window.FindName('txtFooter').Text = "Last check: $timeStr  |  Target: $ServerName  |  v2.3.0  |  $ttlText"
     }
 }
 catch {
@@ -1748,7 +1903,7 @@ try {
 
     $timeStr = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     Update-UI {
-        $Window.FindName('txtFooter').Text = "RDP session list refreshed: $timeStr  |  Target: $ServerName  |  v2.2.6"
+        $Window.FindName('txtFooter').Text = "RDP session list refreshed: $timeStr  |  Target: $ServerName  |  v2.3.0"
     }
 }
 catch {
@@ -1761,45 +1916,47 @@ finally {
 '@
 
 # ===========================================================================
-# Background script: Disconnect session
+# Background script: Disconnect sessions (supports multiple)
 # ===========================================================================
 $script:DisconnectScript = @'
-param($ServerName, $SessionId, $UserName)
-
-Add-Type -AssemblyName Microsoft.Management.Infrastructure -ErrorAction SilentlyContinue
-. ([scriptblock]::Create($FunctionSource))
+param($ServerName, $Targets)
 
 function Update-UI {
     param([scriptblock]$Action)
     $Window.Dispatcher.Invoke($Action, [System.Windows.Threading.DispatcherPriority]::Background)
 }
 
-try {
-    $output = & logoff $SessionId /server:$ServerName 2>&1
-    $exit   = $LASTEXITCODE
-
-    if ($exit -eq 0) {
-        $timeStr = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-        Update-UI {
-            $Window.FindName('txtStatus').Text = "Disconnected user '$UserName' (session $SessionId) from $ServerName."
-            $Window.FindName('txtFooter').Text = "Disconnect at $timeStr  |  Target: $ServerName  |  v2.2.6"
-        }
-    } else {
-        $msg = "Disconnect failed (exit $exit): $output"
-        Update-UI { $Window.FindName('txtStatus').Text = $msg }
+$ok = 0; $fail = 0; $failMsgs = @()
+foreach ($t in $Targets) {
+    try {
+        $output = & logoff $t.Id /server:$ServerName 2>&1
+        if ($LASTEXITCODE -eq 0) { $ok++ }
+        else { $fail++; $failMsgs += "$($t.User) (session $($t.Id)): $output" }
+    } catch {
+        $fail++
+        $failMsgs += "$($t.User) (session $($t.Id)): $($_.Exception.Message)"
     }
 }
-catch {
-    $msg = $_.Exception.Message
-    Update-UI { $Window.FindName('txtStatus').Text = "Disconnect error: $msg" }
+
+$timeStr = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+
+Update-UI {
+    $msg = if ($fail -eq 0) {
+        "Disconnected $ok session(s) from $ServerName."
+    } elseif ($ok -eq 0) {
+        "Failed to disconnect $fail session(s): $($failMsgs -join '; ')"
+    } else {
+        "Disconnected $ok session(s); $fail failed: $($failMsgs -join '; ')"
+    }
+    $Window.FindName('txtStatus').Text = $msg
+    $Window.FindName('txtFooter').Text = "Disconnect at $timeStr  |  Target: $ServerName  |  v2.3.0"
 }
-finally {
-    Start-Sleep -Milliseconds 500
-    Update-UI { $Window.FindName('btnDisconnect').IsEnabled = $true }
-    try {
-        $Window.Dispatcher.Invoke($ReloadAction, [System.Windows.Threading.DispatcherPriority]::Background)
-    } catch { }
-}
+
+Start-Sleep -Milliseconds 500
+Update-UI { $Window.FindName('btnDisconnect').IsEnabled = $true }
+try {
+    $Window.Dispatcher.Invoke($ReloadAction, [System.Windows.Threading.DispatcherPriority]::Background)
+} catch { }
 '@
 
 # ===========================================================================
@@ -1897,52 +2054,32 @@ function Load-RemoteSessions {
 }
 
 # ===========================================================================
-# Confirmation dialog
+# Confirmation dialog (single or multi session)
 # ===========================================================================
 function Show-DisconnectConfirmation {
     param(
         [string]$Server,
-        [PSCustomObject]$Session
+        [PSCustomObject[]]$Sessions
     )
 
-    $escUser    = [System.Security.SecurityElement]::Escape($Session.User)
-    $escServer  = [System.Security.SecurityElement]::Escape($Server)
-    $escState   = [System.Security.SecurityElement]::Escape($Session.State)
-    $escLogon   = [System.Security.SecurityElement]::Escape([string]$Session.LogonTime)
-    $escSession = [System.Security.SecurityElement]::Escape("ID $($Session.SessionId)")
-    $escClient  = [System.Security.SecurityElement]::Escape([string]$Session.ClientDisplay)
+    $escServer = [System.Security.SecurityElement]::Escape($Server)
+    $count     = @($Sessions).Count
+    if ($count -eq 0) { return $false }
 
-    $stateColor = if ($Session.State -ieq 'Disconnected') { "#9E9E9E" } else { "#2E7D32" }
+    if ($count -eq 1) {
+        $s          = $Sessions[0]
+        $escUser    = [System.Security.SecurityElement]::Escape($s.User)
+        $escState   = [System.Security.SecurityElement]::Escape($s.State)
+        $escLogon   = [System.Security.SecurityElement]::Escape([string]$s.LogonTime)
+        $escSession = [System.Security.SecurityElement]::Escape("ID $($s.SessionId)")
+        $escClient  = [System.Security.SecurityElement]::Escape([string]$s.ClientDisplay)
+        $stateColor = if ($s.State -ieq 'Disconnected') { "#9E9E9E" } else { "#2E7D32" }
+        $headerText = "Disconnect this user?"
+        $confirmLabel = "Disconnect"
+        $winHeight  = 510
+        $winWidth   = 640
 
-    $confirmXaml = @"
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Confirm Disconnect" Height="510" Width="640"
-        WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
-        SizeToContent="Manual"
-        Background="#EEF1F5"
-        ShowInTaskbar="False">
-    <Grid Margin="22">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <TextBlock Grid.Row="0" Text="Disconnect this user?"
-                   Foreground="#B45309" FontSize="20" FontWeight="Bold"
-                   TextAlignment="Center" HorizontalAlignment="Center"/>
-
-        <TextBlock Grid.Row="1" Margin="0,10,0,18" TextWrapping="Wrap"
-                   Foreground="#616161" FontSize="12"
-                   TextAlignment="Center" HorizontalAlignment="Center"
-                   Text="The user will be forcibly logged off from the remote server. Any unsaved work may be lost. This action cannot be undone."/>
-
-        <Border Grid.Row="2" Background="White" BorderBrush="#E2E6EC"
-                BorderThickness="1" CornerRadius="10" Padding="18">
-            <StackPanel>
+        $userBlock = @"
                 <TextBlock Text="USER TO DISCONNECT" Foreground="#8A94A6"
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                 <TextBlock Text="$escUser" Foreground="#C2410C"
@@ -1992,6 +2129,61 @@ function Show-DisconnectConfirmation {
                                Foreground="#1F2933" FontSize="13" Margin="0,4"
                                TextWrapping="Wrap"/>
                 </Grid>
+"@
+    } else {
+        $headerText   = "Disconnect $count users?"
+        $confirmLabel = "Disconnect $count"
+        $winHeight    = 560
+        $winWidth     = 680
+
+        $sb = New-Object System.Text.StringBuilder
+        [void]$sb.AppendLine('<TextBlock Text="SERVER" Foreground="#8A94A6" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>')
+        [void]$sb.AppendLine("<TextBlock Text=`"$escServer`" Foreground=`"#2563EB`" FontSize=`"14`" FontWeight=`"Bold`" Margin=`"0,0,0,14`" TextWrapping=`"Wrap`"/>")
+        [void]$sb.AppendLine("<TextBlock Text=`"SESSIONS TO DISCONNECT ($count)`" Foreground=`"#8A94A6`" FontSize=`"11`" FontWeight=`"Bold`" Margin=`"0,0,0,6`"/>")
+        [void]$sb.AppendLine('<ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="220">')
+        [void]$sb.AppendLine('<StackPanel>')
+        foreach ($s in $Sessions) {
+            $u   = [System.Security.SecurityElement]::Escape([string]$s.User)
+            $sid = [System.Security.SecurityElement]::Escape("$($s.SessionId)")
+            $st  = [System.Security.SecurityElement]::Escape([string]$s.State)
+            [void]$sb.AppendLine("<TextBlock Foreground=`"#C2410C`" FontSize=`"14`" FontWeight=`"Bold`" Margin=`"0,3`" TextWrapping=`"Wrap`">$u <Run Foreground=`"#8A94A6`" FontWeight=`"Normal`">(session $sid — $st)</Run></TextBlock>")
+        }
+        [void]$sb.AppendLine('</StackPanel>')
+        [void]$sb.AppendLine('</ScrollViewer>')
+
+        $userBlock = $sb.ToString()
+    }
+
+    $confirmXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Confirm Disconnect" Height="$winHeight" Width="$winWidth"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        SizeToContent="Manual"
+        Background="#EEF1F5"
+        ShowInTaskbar="False">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="$headerText"
+                   Foreground="#B45309" FontSize="20" FontWeight="Bold"
+                   TextAlignment="Center" HorizontalAlignment="Center"/>
+
+        <TextBlock Grid.Row="1" Margin="0,10,0,18" TextWrapping="Wrap"
+                   Foreground="#616161" FontSize="12"
+                   TextAlignment="Center" HorizontalAlignment="Center"
+                   Text="The selected user(s) will be forcibly logged off from the remote server. Any unsaved work may be lost. This action cannot be undone."/>
+
+        <Border Grid.Row="2" Background="White" BorderBrush="#E2E6EC"
+                BorderThickness="1" CornerRadius="10" Padding="18">
+            <StackPanel>
+$userBlock
             </StackPanel>
         </Border>
 
@@ -2000,7 +2192,7 @@ function Show-DisconnectConfirmation {
             <Button Name="btnCancel" Content="Cancel" Width="120" Height="36"
                     Margin="0,0,10,0" Background="#E2E6EC" Foreground="#334155"
                     BorderThickness="0" Cursor="Hand" FontSize="13"/>
-            <Button Name="btnConfirm" Content="Disconnect" Width="150" Height="36"
+            <Button Name="btnConfirm" Content="$confirmLabel" Width="150" Height="36"
                     Background="#DC2626" Foreground="White"
                     BorderThickness="0" FontWeight="Bold" Cursor="Hand" FontSize="13"/>
         </StackPanel>
@@ -2033,19 +2225,25 @@ function Show-DisconnectConfirmation {
 }
 
 # ===========================================================================
-# Disconnect-Session: dispatch background task
+# Disconnect-Session(s): dispatch background task
 # ===========================================================================
 function Disconnect-Session {
     param(
         [string]$Server,
-        [PSCustomObject]$Session
+        [PSCustomObject[]]$Sessions
     )
 
     $Server = Resolve-IfIP -Server $Server
 
-    if ($null -eq $Session.SessionId -or $Session.SessionId -eq "-") {
+    $targets = @()
+    foreach ($s in $Sessions) {
+        if ($null -eq $s.SessionId -or "$($s.SessionId)" -eq "-") { continue }
+        $targets += [PSCustomObject]@{ Id = [int]$s.SessionId; User = [string]$s.User }
+    }
+
+    if ($targets.Count -eq 0) {
         [System.Windows.MessageBox]::Show(
-            "This session has no numeric session ID. Cannot logoff.",
+            "No valid session IDs in the selection. Cannot logoff.",
             "Disconnect failed", 'OK', 'Warning') | Out-Null
         return
     }
@@ -2053,7 +2251,7 @@ function Disconnect-Session {
     $btnDisconnect.IsEnabled = $false
 
     Start-BackgroundTask -ScriptText $script:DisconnectScript `
-        -Arguments @($Server, $Session.SessionId, $Session.User) `
+        -Arguments @($Server, $targets) `
         -Globals @{
             Window         = $window
             SharedState    = $script:SharedState
@@ -2096,49 +2294,67 @@ $btnRefreshTime.Add_Click({
 
 $cmbStateFilter.Add_SelectionChanged({
     if ($script:SharedState.UserData -and @($script:SharedState.UserData).Count -gt 0) {
-        $filter = $cmbStateFilter.SelectedItem.Content
+        $filter = if ($cmbStateFilter.SelectedItem) { $cmbStateFilter.SelectedItem.Content } else { "All sessions" }
         $search = if ($txtSearchUser) { $txtSearchUser.Text } else { "" }
-        Render-Sessions -Filter $filter -Search $search
+        Render-Sessions -Filter $filter -Search $search `
+                        -SortColumn $script:SortColumn -SortAscending $script:SortAscending
     }
 })
 
 $txtSearchUser.Add_TextChanged({
     if ($script:SharedState.UserData -and @($script:SharedState.UserData).Count -gt 0) {
-        $filter = $cmbStateFilter.SelectedItem.Content
-        Render-Sessions -Filter $filter -Search $txtSearchUser.Text
+        $filter = if ($cmbStateFilter.SelectedItem) { $cmbStateFilter.SelectedItem.Content } else { "All sessions" }
+        Render-Sessions -Filter $filter -Search $txtSearchUser.Text `
+                        -SortColumn $script:SortColumn -SortAscending $script:SortAscending
     }
 })
 
+# ---- Header click handlers (sorting) ----
+$hdrUser.Add_Click({    Invoke-SortByColumn -Column 'User' })
+$hdrSession.Add_Click({ Invoke-SortByColumn -Column 'SessionId' })
+$hdrState.Add_Click({   Invoke-SortByColumn -Column 'State' })
+$hdrClient.Add_Click({  Invoke-SortByColumn -Column 'Client' })
+$hdrIdle.Add_Click({    Invoke-SortByColumn -Column 'Idle' })
+$hdrLogon.Add_Click({   Invoke-SortByColumn -Column 'LogonTime' })
+
+# ---- Multi-select aware selection handler ----
 $lstSessions.Add_SelectionChanged({
-    if ($lstSessions.SelectedItem) {
-        $s = $lstSessions.SelectedItem.Session
+    $sel = @($lstSessions.SelectedItems)
+    if ($sel.Count -eq 0) {
+        $txtSelInfo.Text = "No session selected."
+        $btnDisconnect.IsEnabled = $false
+    } elseif ($sel.Count -eq 1) {
+        $s = $sel[0].Session
         $client = if ($s.ClientDisplay) { $s.ClientDisplay } else { "—" }
         $txtSelInfo.Text = ("Selected: {0}  |  Session {1}  |  {2}  |  Client: {3}" -f `
                             $s.User, $s.SessionId, $s.State, $client)
         $btnDisconnect.IsEnabled = $true
     } else {
-        $txtSelInfo.Text = "No session selected."
-        $btnDisconnect.IsEnabled = $false
+        $users = @($sel | ForEach-Object { $_.Session.User })
+        $preview = ($users | Select-Object -First 5) -join ", "
+        if ($users.Count -gt 5) { $preview += ", ..." }
+        $txtSelInfo.Text = ("{0} sessions selected: {1}" -f $sel.Count, $preview)
+        $btnDisconnect.IsEnabled = $true
     }
 })
 
 $btnDisconnect.Add_Click({
     $selected = @($lstSessions.SelectedItems)
-    if ($selected.Count -ne 1) {
-        $txtStatus.Text = "Select exactly one session to disconnect."
+    if ($selected.Count -eq 0) {
+        $txtStatus.Text = "Select at least one session to disconnect."
         return
     }
 
-    $session = $selected[0].Session
-    $server  = $script:SharedState.ServerName
+    $sessions = @($selected | ForEach-Object { $_.Session })
+    $server   = $script:SharedState.ServerName
 
-    $confirmed = Show-DisconnectConfirmation -Server $server -Session $session
+    $confirmed = Show-DisconnectConfirmation -Server $server -Sessions $sessions
     if (-not $confirmed) {
         $txtStatus.Text = "Disconnect cancelled."
         return
     }
 
-    Disconnect-Session -Server $server -Session $session
+    Disconnect-Session -Server $server -Sessions $sessions
 })
 
 # ---- Quick Actions handlers ----
