@@ -1,6 +1,7 @@
 # Remote Server Monitor
 
-<img width="4095" height="2052" alt="image" src="https://github.com/user-attachments/assets/643795de-4ef5-4f39-ac3a-630fc507e505" />
+<img width="4096" height="2052" alt="image" src="https://github.com/user-attachments/assets/9fbc8f3d-d129-4b4a-8817-7ee8efe4ac5c" />
+
 
 
 A simple desktop app for checking on remote Windows servers — see how busy they are, who's logged in over RDP, and kick people off when needed. No install, no dependencies, no cloud. Just run it.
