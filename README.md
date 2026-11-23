@@ -81,7 +81,7 @@ Since RSM is a single script, deployment is incredibly simple:
 
 * **UI Framework:** Built with WPF (Windows Presentation Foundation) via XAML loaded dynamically into PowerShell.
 * **Concurrency:** Long-running queries (like the 1-second network sampling and session parsing) are offloaded to background runspaces. The UI **never freezes**.
-* **Session Parsing:** Utilizes a robust parser for `quser` output, capable of handling localized Windows formats (including localized idle times like `24692d 13h`).
+* **Session Parsing:** Utilizes a robust parser for `quser` output, capable of handling localized Windows formats.
 * **RDP Client Info:** Extracts client IP addresses and hostnames by directly interfacing with `wtsapi32.dll` (WTSClientAddress and WTSClientName).
 * **Messaging Engine:** Utilizes `WTSSendMessageW` (Unicode) via P/Invoke, ensuring messages are delivered even when the legacy Messenger service is disabled.
 
