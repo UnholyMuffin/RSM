@@ -1,6 +1,6 @@
 # Remote Server Monitor
 
-<img width="4096" height="2052" alt="image" src="https://github.com/user-attachments/assets/6928a600-e186-4a14-a317-93340ae0121f" />
+<img width="4096" height="2052" alt="image" src="https://github.com/user-attachments/assets/fd2e10e2-e58e-447b-8ad1-6a6608f6dedb" />
 
 
 
